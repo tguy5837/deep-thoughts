@@ -1,29 +1,51 @@
 import React from 'react';
 import Auth from '../utils/auth';
 import { Navigate, useParams } from 'react-router-dom';
+
 import ThoughtList from '../components/ThoughtList';
 import FriendList from '../components/FriendList';
+import ThoughtForm from '../components/ThoughtForm';
 
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
+
 import { QUERY_USER, QUERY_ME } from '../utils/queries';
+import { ADD_FRIEND } from '../utils/mutations';
+
 
 const Profile = () => {
+  // How does this work?
   const { username: userParam } = useParams();
 
+  // how does this work?
   const { loading, data } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
     variables: { username: userParam }
   });
+
+  // why are we putting this in an array?
+  const [addFriend] = useMutation(ADD_FRIEND);
+
+  const handleClick = async () => {
+    try {
+      await addFriend({
+        variables: { id: user._id }
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const user = data?.me || data?.user || {};
 
   // navigate to personal profile page if username is the logged-in user's
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
     return <Navigate to="/profile" />;
-  }
+  };
 
+  // the loading variable contains a boolean value to show whether the response has been returned
+  // therefore, if it is true, the page will show loading until the data is returned
   if (loading) {
     return <div>Loading...</div>;
-  }
+  };
 
   if (!user?.username) {
     return (
@@ -31,7 +53,7 @@ const Profile = () => {
         You need to be logged in to see this page. User the navigation links above to sign up or log in!
       </h4>
     );
-  }
+  };
 
   return (
     <div>
@@ -39,6 +61,12 @@ const Profile = () => {
         <h2 className="bg-dark text-secondary p-3 display-inline-block">
           Viewing {userParam ? `${user.username}'s` : 'your'} profile.
         </h2>
+
+        {userParam && (
+          <button className='btn ml-auto' onClick={handleClick}>
+            Add Friend
+          </button>
+        )}
       </div>
 
       <div className="flex-row justify-space-between mb-3">
@@ -55,6 +83,7 @@ const Profile = () => {
         </div>
       </div>
 
+      <div className='mb-3'>{!userParam && <ThoughtForm />}</div>
 
     </div>
   );
